@@ -27,3 +27,41 @@ IMPORTANT
 This dataset is a “shrunk” version of the original. In this one only
 mean and standard deviation of measurements appear, both in time and
 frequency domain.
+
+Useful info
+-----------
+
+-   Dataset is \[here\]
+    (‘<a href="https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip" class="uri">https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip</a>’),
+    assuming it was not already downloaded (which is something that the
+    code does anyway).  
+-   *activities* is a 6x2 tibble which contains the activities label  
+-   *features* is a 561x2 tibble which contains ALL the available
+    features from the original repo  
+-   *wantedFeatures* is a 66x2 tibble which contains only the mean and
+    sd related measurements  
+-   *trainSubject* and *testSubject* are columns containing information
+    about the subject ID  
+-   *trainActivities* and *testActivities* are columns containing the
+    label of the six activities, which are `WALKING`,
+    `WALKING_UPSTAIRS`, `WALKING_DOWNSTAIRS`, `SITTING`, `STANDING` and
+    `LAYING`  
+-   *train* and *test* are two separate auxiliary datasets, which are
+    meant to be bounded together  
+-   *dataset* is the complete 19299x68 tibble containing the
+    measurements of interest  
+-   *tidydata* is a 180x68 tibble containing grouped information about
+    each subject and each activity. Every entry contains the mean
+    computed from the original dataset.
+
+Names
+-----
+
+-   Each *“mean()”* and *“std()”* has been converted into **“MEAN”** and
+    **“STD”**  
+-   Each *“f”* and *“t”* at the beginning of a string were turned
+    respectively into **“Frequency”** and **“Time”**  
+-   *“Acc”* has been converted into **“Acceleration”**  
+-   *“Gyro”* has been converted into **“Gyroscope”**  
+-   *“Mag”* has been converted into **“Magnitude”**
+-   *“BodyBody”* has been converted into **“Body”**
