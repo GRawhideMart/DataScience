@@ -2,10 +2,12 @@
 library(dplyr)
 library(lubridate)
 
-url <- 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
-download.file(url, destfile = './dataset.zip', method = 'curl')
-downloadDate <- now()
-unzip('./dataset.zip')
+if(!dir.exists('./UCI HAR Dataset/')) {
+    url <- 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
+    download.file(url, destfile = './dataset.zip', method = 'curl')
+    downloadDate <- now()
+    unzip('./dataset.zip')
+}
 
 ## NOW THERE IS A SUBFOLDER, UCI HAR Dataset, WHICH CONTAINS THE DATASET
 activities <- tibble(read.table('./UCI HAR Dataset/activity_labels.txt', col.names = c('activityCode','activityName')))
@@ -31,3 +33,17 @@ test <- as_tibble(cbind(testSubject,testActivities,test))
 
 dataset <- rbind(train,test)
 dataset$activityName <- factor(dataset$activityName, labels = activities$activityName)
+
+dataset <- group_by(dataset, subject, activityName)
+tidydata <- summarise_all(dataset, mean)
+names(tidydata)<-gsub("std()", "SD", names(tidydata))
+names(tidydata)<-gsub("mean()", "MEAN", names(tidydata))
+names(tidydata)<-gsub("^t", "time", names(tidydata))
+names(tidydata)<-gsub("^f", "frequency", names(tidydata))
+names(tidydata)<-gsub("Acc", "Accelerometer", names(tidydata))
+names(tidydata)<-gsub("Gyro", "Gyroscope", names(tidydata))
+names(tidydata)<-gsub("Mag", "Magnitude", names(tidydata))
+names(tidydata)<-gsub("BodyBody", "Body", names(tidydata))
+
+write.table(tidydata, file = "tidy.txt", row.names=FALSE)
+write.csv(tidydata, file = "tidy.csv", row.names=FALSE)
