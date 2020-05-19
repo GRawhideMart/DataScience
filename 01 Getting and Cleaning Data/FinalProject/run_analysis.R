@@ -10,36 +10,36 @@ if(!dir.exists('./UCI HAR Dataset/')) {
 }
 
 ## NOW THERE IS A SUBFOLDER, UCI HAR Dataset, WHICH CONTAINS THE DATASET
-activities <- tibble(read.table('./UCI HAR Dataset/activity_labels.txt', col.names = c('activityCode','activityName')))
-features <- tibble(read.table('./UCI HAR Dataset/features.txt', col.names = c('classCode','featureName')))
-wantedFeatures <- filter(features, grepl('(mean|std)\\(\\)', featureName))
-levels(wantedFeatures$featureName) <- gsub('[()]', '', levels(wantedFeatures$featureName)) #Feature names are factors, so what has to be manipulated are the levels
+activities <- tibble(read.table('./UCI HAR Dataset/activity_labels.txt', col.names = c('ActivityCode','ActivityName')))
+features <- tibble(read.table('./UCI HAR Dataset/features.txt', col.names = c('ClassCode','FeatureName')))
+wantedFeatures <- filter(features, grepl('(mean|std)\\(\\)', FeatureName))
+levels(wantedFeatures$FeatureName) <- gsub('[()]', '', levels(wantedFeatures$FeatureName)) #Feature names are factors, so what has to be manipulated are the levels
 
 train <- tibble(read.table('./UCI HAR Dataset/train/X_train.txt'))[wantedFeatures$classCode]
-colnames(train) <- wantedFeatures$featureName
+colnames(train) <- wantedFeatures$FeatureName
 trainSubject <- tibble(read.table('./UCI HAR Dataset/train/subject_train.txt'))
-colnames(trainSubject) <- 'subject'
+colnames(trainSubject) <- 'Subject'
 trainActivities <- tibble(read.table('./UCI HAR Dataset/train/y_train.txt'))
-colnames(trainActivities) <- 'activityName'
+colnames(trainActivities) <- 'ActivityName'
 train <- as_tibble(cbind(trainSubject,trainActivities,train))
 
 test <- tibble(read.table('./UCI HAR Dataset/test/X_test.txt'))[wantedFeatures$classCode]
-colnames(test) <- wantedFeatures$featureName
+colnames(test) <- wantedFeatures$FeatureName
 testSubject <- tibble(read.table('./UCI HAR Dataset/test/subject_test.txt'))
-colnames(testSubject) <- 'subject'
+colnames(testSubject) <- 'Subject'
 testActivities <- tibble(read.table('./UCI HAR Dataset/test/y_test.txt'))
-colnames(testActivities) <- 'activityName'
+colnames(testActivities) <- 'ActivityName'
 test <- as_tibble(cbind(testSubject,testActivities,test))
 
 dataset <- rbind(train,test)
-dataset$activityName <- factor(dataset$activityName, labels = activities$activityName)
+dataset$ActivityName <- factor(dataset$activityName, labels = activities$ActivityName)
 
-dataset <- group_by(dataset, subject, activityName)
+dataset <- group_by(dataset, subject, ActivityName)
 tidydata <- summarise_all(dataset, mean)
 names(tidydata)<-gsub("std()", "SD", names(tidydata))
 names(tidydata)<-gsub("mean()", "MEAN", names(tidydata))
-names(tidydata)<-gsub("^t", "time", names(tidydata))
-names(tidydata)<-gsub("^f", "frequency", names(tidydata))
+names(tidydata)<-gsub("^t", "Time", names(tidydata))
+names(tidydata)<-gsub("^f", "Frequency", names(tidydata))
 names(tidydata)<-gsub("Acc", "Accelerometer", names(tidydata))
 names(tidydata)<-gsub("Gyro", "Gyroscope", names(tidydata))
 names(tidydata)<-gsub("Mag", "Magnitude", names(tidydata))
