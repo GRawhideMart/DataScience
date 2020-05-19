@@ -8,6 +8,7 @@ downloadDate <- now()
 unzip('./dataset.zip')
 
 ## NOW THERE IS A SUBFOLDER, UCI HAR Dataset, WHICH CONTAINS THE DATASET
+activities <- tibble(read.table('./UCI HAR Dataset/activity_labels.txt', col.names = c('activityCode','activityName')))
 features <- tibble(read.table('./UCI HAR Dataset/features.txt', col.names = c('classCode','featureName')))
 wantedFeatures <- filter(features, grepl('(mean|std)\\(\\)', featureName))
 levels(wantedFeatures$featureName) <- gsub('[()]', '', levels(wantedFeatures$featureName)) #Feature names are factors, so what has to be manipulated are the levels
@@ -29,3 +30,4 @@ colnames(testActivities) <- 'activityName'
 test <- as_tibble(cbind(testSubject,testActivities,test))
 
 dataset <- rbind(train,test)
+dataset$activityName <- factor(dataset$activityName, labels = activities$activityName)
