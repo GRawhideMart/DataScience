@@ -4,15 +4,15 @@ if(!file.exists('./Data.zip') & !file.exists('./Source_Classification_Code.rds')
     file.remove('./Data.zip')
 }
 
-library(ggplot2)
+require(dplyr)
+require(ggplot2)
 
-NEI <- readRDS('summarySCC_PM25.rds')
-SCC <- readRDS('Source_Classification_Code.rds')
-
-baltimore <- subset(NEI, fips == '24510')
-points <- aggregate(Emissions ~ type + year, data = baltimore, sum)
+baltimore <- as_tibble(readRDS('./summarySCC_PM25.rds')) %>%
+         filter(fips == '24510') %>%
+         group_by(year,type) %>%
+         summarise(totalEmissions = sum(Emissions))
 
 png('plot3.png', width=400, height=400)
-g <- ggplot(data=points, aes(x=year, y=Emissions, color=type))
-print(g + geom_point() + geom_line() + ggtitle("Emission by Source Type in Baltimore: 1999-2008") + xlab("Year") + ylab("PM2.5 Emissions (Tons)"))
+g <- ggplot(data=baltimore, aes(x=year, y=totalEmissions, fill=type))
+print(g + geom_col(position = position_dodge(), width = 1) + ggtitle('Emission by Source Type in Baltimore: 1999-2008') + xlab('Year') + ylab('PM2.5 Emissions [Tons]') + theme_light(base_family = 'Cantarell'))
 dev.off()

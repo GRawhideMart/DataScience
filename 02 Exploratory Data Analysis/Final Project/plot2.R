@@ -4,12 +4,13 @@ if(!file.exists('./Data.zip') & !file.exists('./Source_Classification_Code.rds')
     file.remove('./Data.zip')
 }
 
-NEI <- readRDS('summarySCC_PM25.rds')
-SCC <- readRDS('Source_Classification_Code.rds')
+baltimore <- as_tibble(readRDS('./summarySCC_PM25.rds')) %>% # Read the dataset
+    filter(fips == '24510') %>% # Filter out the rows not needed
+    group_by(year) %>% # Self-explaining
+    summarize(sum(Emissions)) # Sum of total emissions by year in baltimore
 
-baltimore <- subset(NEI, fips == '24510')
-points <- with(baltimore, tapply(Emissions, year, sum))
+names(baltimore) <- c('year','totalEmissions')
 
 png('plot2.png', width = 400,height = 400)
-plot(names(points),points,type='o',xlab = 'Years',ylab='PM2.5 Emissions',pch=19)
+barplot(baltimore$totalEmissions, names.arg = baltimore$year, xlab = 'Years', ylab = 'PM2.5 Emissions in Baltimore [MTons]', col = 'brown')
 dev.off()
