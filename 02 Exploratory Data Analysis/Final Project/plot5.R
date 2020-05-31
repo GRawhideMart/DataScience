@@ -3,25 +3,23 @@ if(!file.exists('./Data.zip') & !file.exists('./Source_Classification_Code.rds')
     unzip('./Data.zip')
     file.remove('./Data.zip')
 }
+library(dplyr)
 library(ggplot2)
-NEI <- readRDS('summarySCC_PM25.rds')
-SCC <- readRDS('Source_Classification_Code.rds')
 
-#Extract gas related data from SCC
-SCC2 <- subset(SCC, select = c(SCC, EI.Sector)) # columns to keep
+points <- as_tibble(readRDS('./Source_Classification_Code.rds')) %>%
+    select('SCC', 'EI.Sector') %>%
+    inner_join(as_tibble(readRDS('./summarySCC_PM25.rds')), by='SCC') %>%
+    filter(fips == '24510' & type == 'ON-ROAD') %>%
+    mutate(EI.Sector = gsub('Mobile - On-Road ', '', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Vehicles', '', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Heavy Duty', 'H-Duty', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Light Duty', 'L-Duty', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Diesel', 'Die', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Gasoline', 'Gas', EI.Sector)) %>%
+    group_by(year, EI.Sector) %>%
+    summarize(totalEmissions = sum(Emissions))
 
-#Find pollutants on road in Baltimore and merge the datasets
-baltimoreOnRoad <- subset(NEI, fips == '24510' & type == 'ON-ROAD')
-mrg <- merge(x=baltimoreOnRoad, y=SCC2, by='SCC')
-
-points <- aggregate(Emissions ~ EI.Sector + year, data = mrg, sum)
-points$EI.Sector <- gsub('Mobile - On-Road ', '', points$EI.Sector)
-points$EI.Sector <- gsub('Heavy Duty', 'H-Duty', points$EI.Sector)
-points$EI.Sector <- gsub('Light Duty', 'L-Duty', points$EI.Sector)
-points$EI.Sector <- gsub('Diesel', 'Die', points$EI.Sector)
-points$EI.Sector <- gsub('Gasoline', 'Gas', points$EI.Sector)
-
-png('plot5.png', width = 500,height = 500)
-g <- ggplot(data=points, aes(x=year, y=Emissions, color=EI.Sector))
-print(g + geom_point() + geom_line() + ggtitle('Motor-Vehicle Emissions in Baltimore: 1999-2008') + xlab('Year') + ylab('PM2.5 Emissions[Tons]') + theme_minimal())
+png('plot5.png', width = 800,height = 600)
+g <- ggplot(data=points, aes(x=year, y=totalEmissions, fill=EI.Sector))
+print(g + geom_col(position = position_dodge(), width = 1) + ggtitle('Motor-Vehicle Emissions in Baltimore: 1999-2008') + xlab('Year') + ylab('PM2.5 Emissions[Tons]') + labs(fill='Vehicle EI Type') + theme_light(base_family = 'Cantarell'))
 dev.off()

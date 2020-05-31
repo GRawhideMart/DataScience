@@ -4,30 +4,23 @@ if(!file.exists('./Data.zip') & !file.exists('./Source_Classification_Code.rds')
     file.remove('./Data.zip')
 }
 library(ggplot2)
-NEI <- readRDS('summarySCC_PM25.rds')
-SCC <- readRDS('Source_Classification_Code.rds')
 
-#Extract gas related data from SCC
-SCC2 <- subset(SCC, select = c(SCC, EI.Sector)) # columns to keep
+points <- as_tibble(readRDS('./Source_Classification_Code.rds')) %>%
+    select('SCC', 'EI.Sector') %>%
+    inner_join(as_tibble(readRDS('./summarySCC_PM25.rds')), by='SCC') %>%
+    filter((fips == '24510' | fips == '06037') & type == 'ON-ROAD') %>%
+    mutate(fips = gsub('06037', 'Los Angeles County', fips)) %>%
+    mutate(fips = gsub('24510', 'Baltimore City', fips)) %>%
+    mutate(EI.Sector = gsub('Mobile - On-Road ', '', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Vehicles', '', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Heavy Duty', 'H-Duty', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Light Duty', 'L-Duty', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Diesel', 'Die', EI.Sector)) %>%
+    mutate(EI.Sector = gsub('Gasoline', 'Gas', EI.Sector)) %>%
+    group_by(fips, year, EI.Sector) %>%
+    summarize(Emissions = sum(Emissions))
 
-#Find pollutants on road in Baltimore and merge the datasets
-baltimoreOnRoad <- subset(NEI, fips == '24510' & type == 'ON-ROAD')
-laOnRoad <- subset(NEI, fips == '06037' & type == 'ON-ROAD')
-mrgBaltimore <- merge(x=baltimoreOnRoad, y=SCC2, by='SCC')
-mrgLA <- merge(x=laOnRoad, y=SCC2, by='SCC')
-mrg <- rbind(mrgLA, mrgBaltimore)
-
-points <- aggregate(Emissions ~ EI.Sector + year + fips, data = mrg, sum)
-points$EI.Sector <- gsub('Mobile - On-Road ', '', points$EI.Sector)
-points$EI.Sector <- gsub('Heavy Duty', 'H-Duty', points$EI.Sector)
-points$EI.Sector <- gsub('Light Duty', 'L-Duty', points$EI.Sector)
-points$EI.Sector <- gsub('Diesel', 'Die', points$EI.Sector)
-points$EI.Sector <- gsub('Gasoline', 'Gas', points$EI.Sector)
-
-points$fips <- gsub('06037', 'Los Angeles', points$fips)
-points$fips <- gsub('24510', 'Baltimore City', points$fips)
-
-png('plot6.png', width = 500,height = 500)
-g <- ggplot(data=points, aes(x=year, y=Emissions, color=EI.Sector))
-print(g + facet_grid(.~fips) + geom_point() + geom_line() + ggtitle('Motor-Vehicle Emissions in Baltimore: 1999-2008') + xlab('Year') + ylab('PM2.5 Emissions[Tons]') + theme_minimal())
+png('plot6.png', width = 1024,height = 768)
+g <- ggplot(data=points, aes(x=year, y=Emissions, fill=EI.Sector))
+print(g + facet_grid(.~fips) + geom_col(position = position_dodge(), width = 1) + ggtitle('Motor-Vehicle Emissions in Baltimore: 1999-2008') + xlab('Year') + ylab('PM2.5 Emissions[Tons]') + labs(fill='Vehicle EI Type') + theme_light(base_family = 'Cantarell'))
 dev.off()
