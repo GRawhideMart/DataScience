@@ -30,7 +30,6 @@ In order to have a more convenient way to process data, I use the *dplyr* and *g
 
 ```{r}
 require(dplyr)
-require(ggplot2)
 ```
 
 First and foremost, the data must be read. As I mentioned, the general line will be treating it as a tibble, special object provided by *dplyr*.  
@@ -107,4 +106,208 @@ economy <- economy %>%
     mutate(Crop_Damage = CROPDMG * CROPDMGEXP) %>%
     select('EVTYPE', 'Property_Damage', 'Crop_Damage')
 ```
-## Analysis
+
+## Analysis  
+Being the data processed, I'll now proceed with the analysis in order to address the questions.  
+
+### Life
+
+* **Which types of events are most harmful to population health?**
+
+I'll treat separately the data coming from `fatalities` and from `injuries`.
+
+#### Fatalities
+
+```{r Fatalities arranging}
+fatalities <- life %>%
+    group_by(EVTYPE) %>%
+    summarize(Fatalities = sum(FATALITIES))
+
+topFatalities <- fatalities %>%
+    arrange(desc(Fatalities)) %>%
+    top_n(15)
+
+head(topFatalities)
+```
+
+Since `fatalities` contains a lot of 0s (i.e. non-fatal events), I selected only the first 15 rows.  
+
+* The top 15 rows in this case contain **`r round(sum(topFatalities$Fatalities) / sum(fatalities$Fatalities) * 100, 2)`%** of all the events, so this is valid.  
+
+#### Injuries
+
+```{r Injuries arranging}
+injuries <- life %>%
+    group_by(EVTYPE) %>%
+    summarize(Injuries = sum(INJURIES))
+
+topInjuries <- injuries %>%
+    arrange(desc(Injuries)) %>%
+    top_n(15)
+
+head(topInjuries)
+```
+
+Again `injuries` contains a lot of 0s (i.e. non-fatal events), I selected only the first 15 rows.  
+
+* The top 15 rows in this case contain **`r round(sum(topInjuries$Injuries) / sum(injuries$Injuries) * 100, 2)`%** of all the events, so this is valid.  
+
+Let's plot the injuries and fatalities by event type.  
+
+* Since I'm only interested in fractions of the total, I will use *pie charts*.
+
+```{r Life plots}
+require(ggplot2)
+require(gridExtra)
+
+gf <- ggplot(topFatalities, aes(x='', y=Fatalities, fill=EVTYPE))
+gi <- ggplot(topInjuries, aes(x='', y=Injuries, fill=EVTYPE))
+
+fatalitiesPlot <- gf + geom_bar(stat = 'identity', width = 1) + coord_polar('y',start = 0) + labs(fill='Event') + ggtitle('Fatalities') + theme_void(base_family = 'Cantarell')
+
+injuriesPlot <- gi + geom_bar(stat = 'identity', width = 1) + coord_polar('y',start = 0) + labs(fill='Event') + ggtitle('Injuries') + theme_void(base_family = 'Cantarell')
+
+gridExtra::grid.arrange(fatalitiesPlot, injuriesPlot, ncol=2)
+```
+
+From the charts, it appears that **most deaths happened from excessive heat and tornados**.  
+
+* Is it true, overall? Let's the fractions.
+
+```{r Fractions (fatalities)}
+fatalities_excessive_heat <- fatalities %>%
+    filter(EVTYPE == 'EXCESSIVE HEAT') %>%
+    select('Fatalities') %>%
+    summarize(FatalitiesEH = Fatalities, TotalFatalities = sum(fatalities$Fatalities), ratio = FatalitiesEH / TotalFatalities)
+
+fatalities_excessive_heat$ratio
+
+fatalities_tornado <- fatalities %>%
+    filter(EVTYPE == 'TORNADO') %>%
+    select('Fatalities') %>%
+    summarize(FatalitiesTORN = Fatalities, TotalFatalities = sum(fatalities$Fatalities), ratio = FatalitiesTORN / TotalFatalities)
+
+fatalities_tornado$ratio
+```
+
+So **excessive heat** and **tornados** take, respectively **`r round(fatalities_excessive_heat$ratio * 100,2)`%** and **`r round(fatalities_tornado$ratio * 100,2)`%** of the total amount of fatalities in the timespan 1995-2011.  
+About injuries, the biggest part of them happened due to tornados. 
+
+* To confirm this, I'll look at the impact of tornados over all the injuries.
+
+```{r Fractions (injuries)}
+injuries_tornado <- injuries %>%
+    filter(EVTYPE == 'TORNADO') %>%
+    select('Injuries') %>%
+    summarize(InjuriesTORN = Injuries, TotalInjuries = sum(injuries$Injuries), ratio = InjuriesTORN / TotalInjuries)
+
+injuries_tornado$ratio
+```
+
+Tornados take **`r round(injuries_tornado$ratio * 100,2)`%** of the total injuries.
+
+### Economy
+
+* **Which types of events have the greatest economic consequences?**
+
+Let's generate a separate analysis for `property damage` and `crop damage`.  
+
+* *Remark: due to the big amount of the data, it makes sense to consider **billions** of dollars, instead of dollars.*
+
+#### Property Damage
+
+```{r Property damage arranging}
+prop <- economy %>%
+    group_by(EVTYPE) %>%
+    summarize(Property_Damage = sum(Property_Damage/1e+09))
+
+top_prop <- prop %>%
+    arrange(desc(Property_Damage)) %>%
+    top_n(10)
+
+head(top_prop)
+```
+
+Considering just the top 10 results is acceptable, since they contain **`r round(sum(top_prop$Property_Damage)/sum(prop$Property_Damage)*100,2)`%** of the total amount of property damage from 1995 to 2011.  
+
+#### Crop Damage
+
+```{r Crop damage arranging}
+crop <- economy %>%
+    group_by(EVTYPE) %>%
+    summarize(Crop_Damage = sum(Crop_Damage/1e+09))
+
+top_crop <- crop %>%
+    arrange(desc(Crop_Damage)) %>%
+    top_n(10)
+
+head(top_crop)
+```
+
+The first 10 results contain **`r round(sum(top_crop$Crop_Damage)/sum(crop$Crop_Damage)*100,2)`%** of the total amount of crop damage from 1995 to 2011; therefore, it's acceptable to make this approximation.  
+
+Again, I will plot together the results in *pie charts*.  
+
+```{r Economy Plots}
+gp <- ggplot(top_prop, aes(x='', y=Property_Damage, fill=EVTYPE))
+gc <- ggplot(top_crop, aes(x='', y=Crop_Damage, fill=EVTYPE))
+
+propPlot <- gp + geom_bar(stat = 'identity', width = 1) + coord_polar('y',start = 0) + labs(fill='Event') + ggtitle('Property Damage') + theme_void(base_family = 'Cantarell')
+
+cropPlot <- gc + geom_bar(stat = 'identity', width = 1) + coord_polar('y',start = 0) + labs(fill='Event') + ggtitle('Crop Damage') + theme_void(base_family = 'Cantarell')
+
+gridExtra::grid.arrange(propPlot, cropPlot, ncol=2)
+```
+
+It appears from the charts that the big part of property damage is done by **floods**, followed by **hurricanes** and **typhoons**; the floods also appear meaningful in crop damages, where the big part of it all is due to **drought**.
+
+* Let's check it out.
+
+```{r Fractions (Property Damage)}
+prop_flood <- prop %>%
+    filter(EVTYPE == 'FLOOD') %>%
+    select('Property_Damage') %>%
+    summarize(Flood_Damage = Property_Damage, Total_Damage = sum(prop$Property_Damage), ratio = Flood_Damage / Total_Damage)
+
+prop_flood$ratio
+
+prop_ht <- prop %>%
+    filter(EVTYPE == 'HURRICANE/TYPHOON') %>%
+    select('Property_Damage') %>%
+    summarize(HT_Damage = Property_Damage, Total_Damage = sum(prop$Property_Damage), ratio = HT_Damage / Total_Damage)
+
+prop_ht$ratio
+```
+
+Floods are responsible for **`r round(prop_flood$ratio*100,2)`%** of the damage, while hurricanes and typhoons are accountable for **`r round(prop_ht$ratio*100,2)`%**; cumulatively, they are responsible for **`r round((prop_flood$ratio + prop_ht$ratio)*100,2)`%** of the total property damages in the years 1995-2011, which is more than half.
+
+```{r Fractions (Crop Damage)}
+crop_flood <- crop %>%
+    filter(EVTYPE == 'FLOOD') %>%
+    select('Crop_Damage') %>%
+    summarize(Flood_Damage = Crop_Damage, Total_Damage = sum(crop$Crop_Damage), ratio = Flood_Damage / Total_Damage)
+
+crop_flood$ratio
+
+crop_drought <- crop %>%
+    filter(EVTYPE == 'DROUGHT') %>%
+    select('Crop_Damage') %>%
+    summarize(Drought_Damage = Crop_Damage, Total_Damage = sum(crop$Crop_Damage), ratio = Drought_Damage / Total_Damage)
+
+crop_drought$ratio
+```
+
+Floods have a small hand in crop damages too (about **`r round(crop_flood$ratio*100,2)`%** of the total); the most significant hand in crop damages is (as previously observed) due to **drought**, which is responsible for **`r round(crop_drought$ratio*100,2)`%** of the amount.  
+
+## Results  
+
+When it comes to human life:  
+
+* Americans should pay particular attention to **tornados**, since they have been responsible for **`r round(injuries_tornado$ratio * 100,2)`%** of the injuries and **`r round(fatalities_tornado$ratio * 100,2)`%** of the deaths in America due to storm events;
+* The other evident danger is **excessive heat**; it's accountable for **`r round(fatalities_excessive_heat$ratio * 100,2)`%** of fatalities, so families should invest in solutions in that sense.  
+
+About the economic impact of natural disasters:  
+
+* **Floods** are responsible for both great economic losses both to properties and to crops (**`r round(prop_flood$ratio*100,2)`%** and **`r round(crop_flood$ratio*100,2)`%** respectively);
+* The biggest problem for crops turned out (more or less obviously) to be **drought**. A good **`r round(crop_drought$ratio*100,2)`%** of crop losses is due to drought, which is something to be addressed;
+* Another small percentage of property damages is due to **hurricanes** and **typhoons**. Protection against these can prevent up to **`r round((prop_flood$ratio + prop_ht$ratio)*100,2)`%** of property damages.
