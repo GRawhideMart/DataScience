@@ -1,0 +1,35 @@
+---
+title: "Codebook"
+author: "Giulio Mario Martena"
+date: "5/19/2020"
+output: md_document
+---
+# Codebook
+
+The experiments have been carried out with a group of 30 volunteers within an age bracket of 19-48 years. Each person performed six activities (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING) wearing a smartphone (Samsung Galaxy S II) on the waist. Using its embedded accelerometer and gyroscope, we captured 3-axial linear acceleration and 3-axial angular velocity at a constant rate of 50Hz. The experiments have been video-recorded to label the data manually. The obtained dataset has been randomly partitioned into two sets, where 70% of the volunteers was selected for generating the training data and 30% the test data.
+
+The sensor signals (accelerometer and gyroscope) were pre-processed by applying noise filters and then sampled in fixed-width sliding windows of 2.56 sec and 50% overlap (128 readings/window). The sensor acceleration signal, which has gravitational and body motion components, was separated using a Butterworth low-pass filter into body acceleration and gravity. The gravitational force is assumed to have only low frequency components, therefore a filter with 0.3 Hz cutoff frequency was used. From each window, a vector of features was obtained by calculating variables from the time and frequency domain.
+
+## IMPORTANT
+This dataset is a "shrunk" version of the original. In this one only mean and standard deviation of measurements appear, both in time and frequency domain.
+
+## Useful info  
+
+* Dataset is [here] ('https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'), assuming it was not already downloaded (which is something that the code does anyway).  
+* *activities* is a 6x2 tibble which contains the activities label  
+* *features* is a 561x2 tibble which contains ALL the available features from the original repo  
+* *wantedFeatures* is a 66x2 tibble which contains only the mean and sd related measurements  
+* *trainSubject* and *testSubject* are columns containing information about the subject ID  
+* *trainActivities* and *testActivities* are columns containing the label of the six activities, which are `WALKING`, `WALKING_UPSTAIRS`, `WALKING_DOWNSTAIRS`, `SITTING`, `STANDING` and `LAYING`  
+* *train* and *test* are two separate auxiliary datasets, which are meant to be bounded together  
+* *dataset* is the complete 19299x68 tibble containing the measurements of interest  
+* *tidydata* is a 180x68 tibble containing grouped information about each subject and each activity. Every entry contains the mean computed from the original dataset.  
+
+## Names
+
+* Each *"mean()"* and *"std()"* has been converted into **"MEAN"** and **"STD"**  
+* Each *"f"* and *"t"* at the beginning of a string were turned respectively into **"Frequency"** and **"Time"**  
+* *"Acc"* has been converted into **"Acceleration"**  
+* *"Gyro"* has been converted into **"Gyroscope"**  
+* *"Mag"* has been converted into **"Magnitude"**
+* *"BodyBody"* has been converted into **"Body"**
