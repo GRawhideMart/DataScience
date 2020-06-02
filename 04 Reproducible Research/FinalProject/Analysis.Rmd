@@ -1,0 +1,110 @@
+---
+title: "Storms and Natural Disasters: what Americans should protect from"
+author: "Giulio Mario Martena"
+date: "6/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+## Synopsis  
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern. This analysis' goal is to highlight the most common accidents, both from a human life's perspective and from an economic one.  
+
+* *Remark: the events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.* 
+
+## Data Processing
+The analysis starts by getting the data; this comes in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size.
+
+```{r Data Download, cache=TRUE}
+url <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2'
+if(!file.exists('StormData.csv.bz2')){download.file(url, './StormData.csv.bz2', method = 'curl')}
+downloaded_at <- Sys.time() # This variable will be sort of a metadata containing the time of downloading.
+```
+
+*Download data: `r downloaded_at`*  
+
+This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage. Additional [documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf) and a [FAQ](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf) are available.  
+In order to have a more convenient way to process data, I use the *dplyr* and *ggplot2* libraries.  
+
+```{r}
+require(dplyr)
+require(ggplot2)
+```
+
+First and foremost, the data must be read. As I mentioned, the general line will be treating it as a tibble, special object provided by *dplyr*.  
+
+```{r Data read, cache=TRUE}
+storm <- as_tibble(read.csv('StormData.csv.bz2'))
+```
+
+The dataset contains **`r nrow(storm)` observations** of **`r ncol(storm)` variables**.  
+
+I want to check out how many measurements were taken per year. In order to do that, I'll chain some functions.  
+
+```{r Measurements per year}
+# Declare a new variable from storm
+eventsPerYear <- storm %>%
+    # Add a column by formatting the date and leaving only the year
+    mutate(YEAR = format(as.Date.character(BGN_DATE, '%m/%d/%Y'), '%Y')) %>%
+    # Group the result by year
+    group_by(YEAR) %>%
+    #Count the events per year
+    summarize(Events = n())
+
+pal <- colorRampPalette(c('red','yellow','green','blue')) # A palette to show barplot
+barplot(eventsPerYear$Events, names.arg = eventsPerYear$YEAR, xlab = 'Year', ylab = 'No. of Events', main = 'Events per Year', col=pal(62), width = 720)
+```
+
+From the barplot above, it's clear that data before **1995** is much more meaningful; which is why that subset is what I will base my analysis on; furthermore, out of the 37 columns of the original dataset I'm only interested in:  
+
+* **EVTYPE** which contains the event type;
+* **FATALITIES**
+* **INJURIES**
+* **PROPDMG** which contains the damage to properties;
+* **PROPDMGEXP** which contains the order of magnitude of the damage to properties;
+* **CROPDMG** which contains the damage to crops;
+* **CROPDMGEXP** which contains the order of magnitude of the damage to crops;
+
+```{r Subsetting}
+# Declare a new table from the original one
+events <- storm %>%
+    # Add year column
+    mutate(YEAR = format(as.Date.character(BGN_DATE, '%m/%d/%Y'), '%Y')) %>%
+    # Select the columns of interest
+    select('YEAR','EVTYPE','FATALITIES','INJURIES','PROPDMG','PROPDMGEXP','CROPDMG','CROPDMGEXP') %>%
+    # Filter out events before 1995
+    filter(YEAR >= 1995)
+```
+
+The new subset contains the **`r round(nrow(events) / nrow(storm) * 100, digits = 2)`%** of the original data, which justifies the neglecting.  
+At this point, I will create two distinct datasets for the aspects regarding **life** and another for the aspects regarding **economy**.
+```{r Separate by question}
+life <- events %>%
+    select('EVTYPE','FATALITIES','INJURIES')
+
+economy <- events %>%
+    select('EVTYPE','PROPDMG','PROPDMGEXP','CROPDMG','CROPDMGEXP')
+```
+
+A final processing adjustment has to be made about the economy part. Since the order of magnitude is put in a separate column with respect to the significant value, this comes as a factor.
+Let's convert each level to the multiplying factor it represents.  
+*Remark: special characters which are not numbers are data without clear meaning, so they must be removed.*
+
+```{r Damage values}
+levels(economy$PROPDMGEXP)
+levels(economy$CROPDMGEXP)
+#The different levels show ununiformity of the ways to indicate orders of magnitude. This has to be addressed.
+levels(economy$CROPDMGEXP) <- c(0,0,1,100,10^9,10^3,10^3,10^6,10^6)
+levels(economy$PROPDMGEXP) <- c(0,0,0,0,1,10,100,10^3,10^4,10^5,10^6,10^7,10^8,10^9,10^2,10^2,10^3,10^6,10^6)
+
+# Having mapped all the values, I'll now reassign the columns
+economy <- economy %>%
+    mutate(CROPDMGEXP = as.numeric(levels(CROPDMGEXP))[economy$CROPDMGEXP]) %>%
+    mutate(PROPDMGEXP = as.numeric(levels(PROPDMGEXP))[economy$PROPDMGEXP]) %>%
+    mutate(Property_Damage = PROPDMG * PROPDMGEXP) %>%
+    mutate(Crop_Damage = CROPDMG * CROPDMGEXP) %>%
+    select('EVTYPE', 'Property_Damage', 'Crop_Damage')
+```
+## Analysis
