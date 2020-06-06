@@ -33,7 +33,7 @@ First of all, I wonder if mean from the tooth growth is the same **globally** an
 * *I will assume that the variance is the same and that they used 6 different sets of guinea pigs in order not to have results affected by previous treatments.*
 
 ### Hypothesis 1: no dosage separation   
-$$H_0: \mu_{OJ} = \mu_{VC}$$ $$H_1: \mu_{OJ} > \mu_{VC}$$
+$$H_0: \mu_{OJ} = \mu_{VC}$$ $$H_1: \mu_{OJ} \neq \mu_{VC}$$
 
 ```{r}
 t.test(len ~ supp, ToothGrowth, paired = FALSE, var.equal = TRUE)
@@ -42,7 +42,7 @@ Since $p > 0.05$ and the confidence interval includes 0, so even though $\mu_{OJ
 
 ### Hypothesis 2: 0.5mg/day dosage
 
-$$H_0: \mu_{OJ,.5} = \mu_{VC,.5}$$ $$H_1: \mu_{OJ,.5} > \mu_{VC,.5}$$
+$$H_0: \mu_{OJ,.5} = \mu_{VC,.5}$$ $$H_1: \mu_{OJ,.5} \neq \mu_{VC,.5}$$
 
 ```{r}
 t.test(len ~ supp, data = filter(ToothGrowth, dose == 0.5), paired = FALSE, var.equal = TRUE)
@@ -51,7 +51,7 @@ The p-value is smaller than .05, and the confidence interval does not include 0.
 
 ### Hypothesis 3: 1mg/day dosage
 
-$$H_0: \mu_{OJ,1} = \mu_{VC,1}$$ $$H_1: \mu_{OJ,1} > \mu_{VC,1}$$
+$$H_0: \mu_{OJ,1} = \mu_{VC,1}$$ $$H_1: \mu_{OJ,1} \neq \mu_{VC,1}$$
 
 ```{r}
 t.test(len ~ supp, data = filter(ToothGrowth, dose == 1), paired = FALSE, var.equal = TRUE)
@@ -60,7 +60,7 @@ Just as in hypothesis 2, T-Test suggests that $p<0.05$ and the confidence interv
 
 ### Hypothesis 4: 2mg/day dosage
 
-$$H_0: \mu_{OJ,2} = \mu_{VC,2}$$ $$H_1: \mu_{OJ,2} > \mu_{VC,2}$$
+$$H_0: \mu_{OJ,2} = \mu_{VC,2}$$ $$H_1: \mu_{OJ,2} \neq \mu_{VC,2}$$
 
 ```{r}
 t.test(len ~ supp, data = filter(ToothGrowth, dose == 2), paired = FALSE, var.equal = TRUE)
@@ -71,7 +71,7 @@ From the boxplot it would also appear a similar growth for 1mg/day dosage of ora
 
 ### Hypothesis 5: 1mg/day of orange juice vs 2mg/day of ascorbic acid
 
-$$H_0: \mu_{OJ,1} = \mu_{VC,2}$$ $$H_1: \mu_{OJ,1} > \mu_{VC,2}$$
+$$H_0: \mu_{OJ,1} = \mu_{VC,2}$$ $$H_1: \mu_{OJ,1} \neq \mu_{VC,2}$$
 
 ```{r}
 h <- bind_rows(ToothGrowth %>%
@@ -85,7 +85,7 @@ A similar pattern also appears in 1mg/day of orange juice and 2mg/day of the sam
 
 ### Hypothesis 6: 1mg/day vs 2mg/day of orange juice
 
-$$H_0: \mu_{OJ,2} = \mu_{OJ,1}$$ $$H_1: \mu_{OJ,2} > \mu_{OJ,1}$$
+$$H_0: \mu_{OJ,2} = \mu_{OJ,1}$$ $$H_1: \mu_{OJ,2} \neq \mu_{OJ,1}$$
 
 ```{r}
 h <- bind_rows(ToothGrowth %>%
