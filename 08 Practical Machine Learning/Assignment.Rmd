@@ -1,0 +1,154 @@
+---
+title: "Exercise Prediction"
+author: "Giulio Martena"
+date: "7/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har) (see the section on the Weight Lifting Exercise Dataset).
+
+## Preliminaries
+
+In this section I will require the libraries for the prediction.
+
+```{r message=FALSE, warning=FALSE}
+require(caret);require(ggplot2);require(dplyr);require(randomForest)
+```
+
+## Data
+
+### Training and Testing
+
+```{r Training and Testing dataset}
+url <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
+if(!(file.exists('training.csv'))) download.file(url,'training.csv')
+training <- (read.csv('training.csv'))
+```
+
+### Validation
+
+**Remark: even though this is defined as a testing set, I will use it for validation, hence the variable name.**
+
+```{r validation dataset}
+url <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
+if(!(file.exists('validation.csv'))) download.file(url,'validation.csv')
+validation <- (read.csv('validation.csv'))
+```
+
+Before moving forward, I want to thank [these guys](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har) for providing such data.
+
+## Preprocessing
+
+First, let's look at the training dataset, in order to remove some useless variables (in terms of prediction).
+```{r}
+str(training)
+```
+
+The first 5 variables have clearly nothing to do with movement, so they will not be good predictors in this case.
+
+```{r}
+training <- training[, 6:ncol(training)]
+```
+
+The next natural steps are to split the training dataset into 60% training and 40% testing.
+
+```{r}
+inTrain <- createDataPartition(y = training$classe, p = 0.6, list = FALSE)
+training <- training[inTrain, ]
+testing <- training[-inTrain, ]
+```
+
+Now let's remove, as seen during lessons, the predictors with near zero variance.
+
+```{r}
+nzv <- nearZeroVar(training, saveMetrics = TRUE)
+featuresToKeep <- row.names(nzv[nzv$nzv == FALSE, ])
+training <- training[, featuresToKeep]
+```
+
+Finally, the variables filled with NAs are not useful and can be removed.
+
+```{r}
+training <- training[, colSums(is.na(training)) == 0]
+```
+
+The residual dataset has `r ncol(training)` variables left.
+
+## Model training
+
+Due to the nature of the problem, predicting with regression would not make much sense. Instead, I'll choose a tree approach.   For training, I set up a 6-fold cross validation like so:
+
+```{r}
+modelControl <- trainControl(method = 'cv', number = 6)
+```
+
+First I fit a model with **random forest** algorithm.
+
+```{r}
+modelRF <- train(classe ~ ., data = training, method = 'rf', trControl = modelControl)
+modelRF$finalModel
+```
+
+Then with **gradient boosting method**.
+
+```{r}
+modelGBM <- train(classe ~ ., data = training, method = 'gbm', verbose = FALSE, trControl = modelControl)
+modelGBM$finalModel
+```
+
+And, finally, **linear discriminant analysis**.
+
+```{r}
+modelLDA <- train(classe ~ ., data = training, method = 'lda', trControl = modelControl)
+modelLDA$finalModel
+```
+
+## Prediction
+
+This is where the validation set will be used.
+
+### Prediction with Random Forest
+
+```{r}
+predictionRF <- predict(modelRF, newdata = testing)
+confusionMatrix(predictionRF, factor(testing$classe))$overall[1]
+table(predictionRF, testing$classe)
+```
+
+### Prediction with Gradient Boost Method
+
+```{r}
+predictionGBM <- predict(modelGBM, newdata = testing)
+confusionMatrix(predictionGBM, factor(testing$classe))$overall[1]
+table(predictionGBM, testing$classe)
+```
+
+### Prediction with Linear Discriminant Analysis
+
+```{r}
+predictionLDA <- predict(modelLDA, newdata = testing)
+confusionMatrix(predictionLDA, factor(testing$classe))$overall[1]
+table(predictionLDA, testing$classe)
+```
+
+From the accuracies, it appears clear that LDA performs pretty poorly, compared to the other two methods; also, for the problem at hand, **random forest has a better accuracy**.
+
+## Final test on validation set
+
+As mentioned, I will perform it using the most accurate method, which is random forest.
+
+```{r}
+predictionForValidation <- predict(modelRF, newdata = validation)
+```
+
+Hence, the prediction graph on the given validation set.
+
+```{r}
+qplot(x = 1:20, y = predictionForValidation) + geom_text(nudge_y = -0.1, aes(label = 1:20)) + xlab('Question number') + ylab('Class predicted')
+```
