@@ -1,0 +1,98 @@
+---
+title: "My Fancy Presentation"
+author: "Giulio Martena"
+date: "7/26/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## My new slide
+Some content
+
+Plain text
+
+*italicized*  
+**bold**  
+`some code`  
+
+## My new slide
+
+```{r,comment='', echo=TRUE, eval=FALSE}
+head(mtcars)
+```
+
+## Another slide
+```{r, fig.align='center', fig.cap='My awesome figure'}
+plot(mtcars$wt, mtcars$mpg, xlab='Weight',ylab='MPG')
+```
+
+***
+A slide without a title
+
+## My title
+
+### A top Level subheading
+
+#### A top second
+
+- Bullet 1
+- Bullet 2
+
+1. Item a
+2. Item b
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+
+## My first map
+
+```{r}
+library(leaflet)
+leaflet() %>% addTiles()
+```
+
+## Duomo di Lecce
+
+```{r}
+my_map <- leaflet() %>%
+    addTiles() %>%
+    addMarkers(lat = 40.35, lng = 18.167, popup = 'Duomo di Lecce')
+my_map
+```
+
+
+## Random markers
+
+```{r}
+df <- data.frame(lat=runif(20, min = 39.2, max=39.3),
+                 lng=runif(20, min = -76.6,max = -76.5))
+
+df %>%
+    leaflet() %>%
+    addTiles() %>%
+    addMarkers()
+```

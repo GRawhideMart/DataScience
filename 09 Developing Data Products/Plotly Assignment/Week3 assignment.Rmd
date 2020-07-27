@@ -1,0 +1,22 @@
+---
+title: "Plotly Playground"
+author: "Giulio Martena"
+date: "7/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this assignment I will simulate some data about temperature and pressure.
+
+```{r warning=FALSE, message=FALSE}
+library(plotly)
+
+time <- 1:500
+temp <- rnorm(500, mean = 25, sd = 2)
+pres <- rnorm(500, mean = 1, sd = .01)
+
+plot_ly(x = ~time, y = ~temp, z = ~pres, type = 'scatter3d', color = ~temp)
+```

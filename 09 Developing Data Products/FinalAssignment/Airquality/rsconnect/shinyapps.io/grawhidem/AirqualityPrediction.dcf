@@ -1,0 +1,12 @@
+name: AirqualityPrediction
+title: AirqualityPrediction
+username:
+account: grawhidem
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2617339
+bundleId: 3442393
+url: https://grawhidem.shinyapps.io/AirqualityPrediction/
+when: 1595875969.04953
+asMultiple: FALSE
+asStatic: FALSE

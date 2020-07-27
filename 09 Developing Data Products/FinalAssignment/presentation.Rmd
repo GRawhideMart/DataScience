@@ -1,0 +1,56 @@
+---
+title: "Ozone Prediction"
+author: "Giulio Martena"
+date: "7/28/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## The airquality dataset
+- My app aims at exploring some more machine learning, at least conceptually.
+- Among the various *stock datasets* that R provides, there is one called `airquality`, containing some information about pollution.
+```{r comment=''}
+head(airquality)
+```
+
+## The NA problem
+
+- The database, already small as it is, (153 observations of 6 variables), is even thinner if one excludes incomplete cases from the analysis.
+- I picked a small one because of the heaviness of the training step that comes within a machine learning algorithm.
+- The incomplete cases are overall the `r round(nrow(airquality[!complete.cases(airquality),]) / nrow(airquality) * 100, 1)`% of the total
+- They can be dealt it in two ways: either imputing them with the median or eliminating them altogether from the dataset. That's what the *"Impute NAs"* checkbox is for.
+
+## Slide with R Output
+
+The app also lets the user choose the data partition (in a limited range) with the *"Training partition"* slider; this will set how much of the data will be used for training.  
+The training takes place using a plain simple linear model. With a k-fold cross-validation training control system.  
+
+- The app also lets the user choose how many (in a range 2 to 5) folds does he/she want to perform cross-validation with; that's what the last input is for.  
+
+- Please note that above all this, a preliminary analysis on the relevance of the 5 predictors has been made, and it turned out all predictors were somewhat relevant.  
+
+- **FINAL REMARK**: this is **NOT** (nor it claims to be) a good exercise on machine learning. It was just something to recall a few concepts with, while experimenting a little with the tools of this course.
+
+## Example
+
+```{r fig.cap='Example with k = 3, p = 0.7 and NA imputing', fig.align='center', message=FALSE, warning=FALSE}
+require(ggplot2);require(gridExtra);require(caret);
+data('airquality')
+
+airquality <- predict(preProcess(airquality, 'medianImpute'), airquality)
+inTrain <- createDataPartition(y = airquality$Ozone, p = 0.7, list = FALSE)
+training <- airquality[inTrain,]
+testing <- airquality[-inTrain,]
+        
+modelControl <- trainControl(method = 'cv', number = 3)
+modelLinear <- train(Ozone ~ ., data = training, method = 'lm', trControl = modelControl)
+prediction <- predict(modelLinear, newdata = testing)
+pl1 <- qplot(testing$Temp, testing$Ozone) + geom_smooth() + xlab('') + ylab('Testing')
+pl2 <- qplot(testing$Temp, prediction) + geom_smooth() + xlab('Temperature') + ylab('Prediction')
+grid.arrange(pl1, pl2, ncol = 1, nrow = 2)
+```
+
+# THANK YOU!

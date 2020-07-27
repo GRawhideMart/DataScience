@@ -1,0 +1,29 @@
+---
+title: "Leaflet map"
+author: "Giulio Martena"
+date: "7/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## My leaflet map
+
+```{r}
+library(leaflet)
+lat <- runif(98, min = 39.801, max = 40.806)
+lng <- runif(98, min = 17.537, max = 18.357)
+class <- factor(rep(LETTERS[1:7], length.out = 98))
+color <- factor(rep(c('red','orange','yellow','green','blue','mediumpurple','purple'), length.out = 98))
+
+df <- data.frame(lat = lat, lng = lng, class = class, color = color)
+
+df %>%
+    leaflet() %>%
+    addTiles() %>%
+    addCircleMarkers(color = df$color) %>%
+    addMarkers(clusterOptions = markerClusterOptions()) %>%
+    addLegend(labels = levels(class), colors = levels(color))
+```

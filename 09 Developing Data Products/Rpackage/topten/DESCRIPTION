@@ -1,0 +1,12 @@
+Package: topten
+Type: Package
+Title: Building a Prediction Model from Top 10 features
+Version: 1.0
+Date: 2020-07-27
+Author: Giulio Mario Martena
+Maintainer: Giulio Mario Martena <giulio.mario.martena@cdo-online.it>
+Description: Functions for predicting models from selecting top ten features
+License: GPL
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
